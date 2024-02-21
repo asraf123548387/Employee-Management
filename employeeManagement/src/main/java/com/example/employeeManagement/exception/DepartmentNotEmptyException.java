@@ -1,2 +1,12 @@
-package com.example.employeeManagement.exception;public class DepartmentNotEmptyException {
+package com.example.employeeManagement.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(value = HttpStatus.CONFLICT)
+public class DepartmentNotEmptyException extends RuntimeException {
+
+    public DepartmentNotEmptyException(String message) {
+        super(message);
+    }
 }
