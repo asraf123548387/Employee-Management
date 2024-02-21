@@ -55,13 +55,16 @@ public class DepartmentController {
     //departments that, when provided with a parameter expand=employee, returns
     //the department along with a list of all employees under that department.
 
-    @GetMapping("/departmentWithEmployee/{id}")
-    public ResponseEntity<DepartmentDTO> getDepartment(@PathVariable Long id,
-                                                       @RequestParam(required = false) String expand) {
-        DepartmentDTO departmentDTO = departmentService.getDepartment(id, "employee".equalsIgnoreCase(expand));
-        return ResponseEntity.ok(departmentDTO);
+    @GetMapping("/departmentWithParam/{id}")
+    public ResponseEntity<Page<DepartmentDTO>> getDepartment(@PathVariable Long id,
+                                                             @RequestParam(required = false) String expand,
+                                                             @RequestParam(defaultValue = "0") int page,
+                                                             @RequestParam(defaultValue = "20") int size) {
+        boolean expandEmployees = "employee".equalsIgnoreCase(expand);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<DepartmentDTO> departmentPage = departmentService.getDepartment(id, expandEmployees, pageable);
+        return ResponseEntity.ok(departmentPage);
     }
-
 
 
 

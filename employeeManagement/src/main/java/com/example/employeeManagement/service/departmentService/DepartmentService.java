@@ -14,5 +14,5 @@ public interface DepartmentService {
 
     Page<Department> getAllDepartments(Pageable pageable);
 
-    DepartmentDTO getDepartment(Long id, boolean expandEmployees);
+    public Page<DepartmentDTO> getDepartment(Long id, boolean expandEmployees, Pageable pageable);
 }

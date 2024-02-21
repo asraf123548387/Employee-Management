@@ -1,5 +1,8 @@
 package com.example.employeeManagement.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -49,12 +52,15 @@ public class Employee {
 
     @ManyToOne
     @JoinColumn(name = "department_id")
+    @JsonBackReference("employee-department")
     private Department department;
 
     @ManyToOne
     @JoinColumn(name = "reporting_manager_id")
+    @JsonBackReference(value = "employee-reportingManager")
     private Employee reportingManager;
 
+    @JsonBackReference("department-employee")
     @OneToOne(mappedBy = "departmentHead")
     private Department departmentHeadOf;
 

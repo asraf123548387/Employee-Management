@@ -1,18 +1,24 @@
 package com.example.employeeManagement.service.employeeService;
 
 import com.example.employeeManagement.DTO.EmployeeDTO;
+import com.example.employeeManagement.DTO.EmployeeLookupDTO;
 import com.example.employeeManagement.entity.Department;
 import com.example.employeeManagement.entity.Employee;
+import com.example.employeeManagement.exception.DepartmentNotFoundException;
 import com.example.employeeManagement.exception.ResourceNotFoundException;
 import com.example.employeeManagement.repository.DepartmentRepository;
 import com.example.employeeManagement.repository.EmployeeRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -22,6 +28,10 @@ public class EmployeeServiceImpl implements EmployeeService{
     //Below code is used to create Employee
     @Override
     public EmployeeDTO createEmployee(EmployeeDTO employeeDTO) {
+        // Fetch the department from the database
+        Department department = departmentRepository.findById(employeeDTO.getDepartmentId())
+                .orElseThrow(() -> new DepartmentNotFoundException("Department not found with id " + employeeDTO.getDepartmentId()));
+
         Employee employee=new Employee();
         employee.setAddress(employeeDTO.getAddress());
         employee.setDateOfBirth(employeeDTO.getDateOfBirth());
@@ -32,6 +42,19 @@ public class EmployeeServiceImpl implements EmployeeService{
         employee.setRole(employeeDTO.getRole());
         employee.setSalary(employeeDTO.getSalary());
         employee.setYearlyBonusPercentage(employeeDTO.getYearlyBonusPercentage());
+        employee.setDepartment(department);
+        // Check if the reporting manager ID is present in the DTO
+        if (employeeDTO.getReportingManagerId() != null) {
+            // Fetch the reporting manager from the database
+            Employee reportingManager = employeeRepository.findById(employeeDTO.getReportingManagerId())
+                    .orElseThrow(() -> new EntityNotFoundException("Reporting manager not found with id " + employeeDTO.getReportingManagerId()));
+
+            // Set the reporting manager on the employee
+            employee.setReportingManager(reportingManager);
+        } else {
+            // If the reporting manager ID is not present, set the reporting manager to null
+            employee.setReportingManager(null);
+        }
         Employee savedEmployee = employeeRepository.save(employee);
 
         //returning the data to response
@@ -45,6 +68,8 @@ public class EmployeeServiceImpl implements EmployeeService{
         createdEmployeeDTO.setRole(savedEmployee.getRole());
         createdEmployeeDTO.setSalary(savedEmployee.getSalary());
         createdEmployeeDTO.setYearlyBonusPercentage(savedEmployee.getYearlyBonusPercentage());
+        createdEmployeeDTO.setDepartmentId(employeeDTO.getDepartmentId());
+        createdEmployeeDTO.setReportingManagerId(employeeDTO.getReportingManagerId());
 
         return createdEmployeeDTO;
     }
@@ -76,11 +101,17 @@ public class EmployeeServiceImpl implements EmployeeService{
                     .orElseThrow(() -> new ResourceNotFoundException("Department not found with id " + employeeDTO.getDepartmentId()));
             employee.setDepartment(department);
         }
-        // Handle the reporting manager relationship
+         // in this i give becuase top level employee does not have manager
         if (employeeDTO.getReportingManagerId() != null) {
+            // Fetch the reporting manager from the database
             Employee reportingManager = employeeRepository.findById(employeeDTO.getReportingManagerId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Reporting manager not found with id " + employeeDTO.getReportingManagerId()));
+                    .orElseThrow(() -> new EntityNotFoundException("Reporting manager not found with id " + employeeDTO.getReportingManagerId()));
+
+            // Set the reporting manager on the employee
             employee.setReportingManager(reportingManager);
+        } else {
+            // If the reporting manager ID is not present, set the reporting manager to null
+            employee.setReportingManager(null);
         }
         //save the updating data
         Employee updatedEmployee = employeeRepository.save(employee);
@@ -96,7 +127,12 @@ public class EmployeeServiceImpl implements EmployeeService{
         updatedEmployeeDTO.setJoiningDate(updatedEmployee.getJoiningDate());
         updatedEmployeeDTO.setYearlyBonusPercentage(updatedEmployee.getYearlyBonusPercentage());
         updatedEmployeeDTO.setDepartmentId(updatedEmployee.getDepartment().getId());
-        updatedEmployeeDTO.setReportingManagerId(updatedEmployee.getReportingManager().getId());
+        // Check if the reporting manager is not null before setting the reporting manager ID
+        if (updatedEmployee.getReportingManager() != null) {
+            updatedEmployeeDTO.setReportingManagerId(updatedEmployee.getReportingManager().getId());
+        } else {
+            updatedEmployeeDTO.setReportingManagerId(null);
+        }
 
         return updatedEmployeeDTO;
     }
@@ -136,13 +172,14 @@ public class EmployeeServiceImpl implements EmployeeService{
 
         return updatedEmployeeDTO;
     }
-
+  // below code is for getting all employee
     @Override
     public Page<EmployeeDTO> getAllEmployees(Pageable pageable) {
         Page<Employee> employeePage = employeeRepository.findAll(pageable);
         Page<EmployeeDTO> employeeDTOPage = employeePage.map(this::convertToDTO);
         return employeeDTOPage;
     }
+
     private EmployeeDTO convertToDTO(Employee employee) {
         EmployeeDTO employeeDTO = new EmployeeDTO();
         employeeDTO.setId(employee.getId());
@@ -157,5 +194,16 @@ public class EmployeeServiceImpl implements EmployeeService{
         employeeDTO.setYearlyBonusPercentage(employee.getYearlyBonusPercentage());
         employeeDTO.setDepartmentId(employee.getDepartment().getId());
         return employeeDTO;
+    }
+
+
+  // below is the function for getting all employees passing lookup=true
+    @Override
+    public Page<EmployeeLookupDTO> getEmployeeNamesAndIds(Pageable pageable) {
+        Page<Employee> employeePage = employeeRepository.findAll(pageable);
+        List<EmployeeLookupDTO> employeeLookupList = employeePage.getContent().stream()
+                .map(employee -> new EmployeeLookupDTO(employee.getId(), employee.getName()))
+                .collect(Collectors.toList());
+        return new PageImpl<>(employeeLookupList, employeePage.getPageable(), employeePage.getTotalElements());
     }
 }

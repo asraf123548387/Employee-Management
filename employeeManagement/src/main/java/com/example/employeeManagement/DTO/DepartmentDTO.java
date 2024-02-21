@@ -15,8 +15,7 @@ public class DepartmentDTO {
     private String name;
     private LocalDate creationDate;
     private Long departmentHeadId;
+    private List<EmployeeDTO> employees;
 
 
-    public void setEmployees(List<Employee> employees) {
-    }
 }

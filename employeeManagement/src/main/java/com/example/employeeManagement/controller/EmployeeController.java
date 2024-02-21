@@ -1,6 +1,7 @@
 package com.example.employeeManagement.controller;
 
 import com.example.employeeManagement.DTO.EmployeeDTO;
+import com.example.employeeManagement.DTO.EmployeeLookupDTO;
 import com.example.employeeManagement.entity.Employee;
 import com.example.employeeManagement.service.employeeService.EmployeeServiceImpl;
 
@@ -10,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -62,6 +65,19 @@ public class EmployeeController {
         Page<EmployeeDTO> employeePage = employeeService.getAllEmployees(pageable);
         return ResponseEntity.ok(employeePage);
     }
-
+    //    List Employee Name and ID: Develop an API endpoint to list employee names
+    //    and IDs. This should be triggered by passing lookup=true as a parameter.
+    @GetMapping("/employeesNameAndIdWithParam")
+    public ResponseEntity<Page<EmployeeLookupDTO>> getEmployeeNamesAndIds(
+            @RequestParam(required = false) Boolean lookup,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        if (Boolean.TRUE.equals(lookup)) {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<EmployeeLookupDTO> employeeLookupPage = employeeService.getEmployeeNamesAndIds(pageable);
+            return ResponseEntity.ok(employeeLookupPage);
+        }
+        return ResponseEntity.badRequest().build(); // Return a bad request if lookup is not true
+    }
 
 }
