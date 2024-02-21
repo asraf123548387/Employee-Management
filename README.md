@@ -31,5 +31,5 @@ Build and run the application: mvn spring-boot:run The API should now be running
 ## Postman Api Documentation
 https://documenter.getpostman.com/view/29698518/2sA2rAxgvn
 
-## Database script for creating table
+## Database script and design for creating table
 https://docs.google.com/document/d/18fyAOswQlSyquzkexu8LW_ACfqtvWplSH1w4XvpAC_c/edit?usp=sharing
